@@ -4,6 +4,7 @@ import signal
 import subprocess
 import time
 import threading
+from datetime import datetime
 from scapy.all import *
 from collections import defaultdict
 
@@ -16,20 +17,36 @@ def process_packet(packet):
         bssid = packet[Dot11].addr2
         ssid = packet[Dot11Elt].info.decode()
         channel = int(packet[Dot11Elt:3].info[0])
+        signal_strength = packet.dBm_AntSignal
 
         if bssid not in networks:
-            networks[bssid] = (ssid, channel)
-            print(f"SSID: {ssid}, BSSID: {bssid}, Channel: {channel}")
+            networks[bssid] = (ssid, channel, signal_strength)
+            print(f"SSID: {ssid}, BSSID: {bssid}, Channel: {channel}, Signal: {signal_strength} dBm")
+        else:
+            ssid, channel, signal_strength = networks[bssid]
+            networks[bssid] = (ssid, channel, max(signal_strength, packet.dBm_AntSignal))
+
+        # Retrieve the top 3 most active clients for the BSSID
+        clients = get_top_clients(bssid, 3)
+        client_str = ','.join(clients) if clients else 'None'
+        print(f"    Top clients: {client_str}")
+
 
 def select_networks():
-    print("\nAvailable networks:")
-    for i, (bssid, (ssid, channel)) in enumerate(networks.items(), 1):
-        print(f"{i}. SSID: {ssid}, BSSID: {bssid}, Channel: {channel}")
+    if not networks:
+        print("No networks found. Exiting.")
+        sys.exit(0)
+
+    sorted_networks = sorted(networks.items(), key=lambda x: x[1][2], reverse=True)
+
+    for i, (bssid, (ssid, channel, signal)) in enumerate(sorted_networks, start=1):
+        print(f"{i}. SSID: {ssid}, BSSID: {bssid}, Channel: {channel}, Signal: {signal} dBm")
 
     selected_indices = input("Select networks to target (comma-separated numbers): ").split(',')
-    selected_bssids = [list(networks.keys())[int(index) - 1] for index in selected_indices]
-
+    selected_bssids = [sorted_networks[int(index) - 1][0] for index in selected_indices]
     return selected_bssids
+
+
 
 def choose_action(selected_bssids):
     action_options = [
@@ -51,6 +68,21 @@ def countdown_timer(timeout):
         sys.stdout.write(f"\rTime remaining: {remaining:2d} seconds")
         sys.stdout.flush()
         time.sleep(1)
+
+def get_top_clients(bssid,amount):
+    clients = defaultdict(int)
+    def count_client(pkt):
+        if pkt.haslayer(Dot11) and pkt.addr2 == bssid:
+            clients[pkt.addr1] += 1
+
+    # Sniff packets for 5 seconds to capture clients
+    sniff(iface=mon_iface, prn=count_client, timeout=5)
+
+    # Get the top 3 clients with the highest number of packets
+    top_clients = sorted(clients.items(), key=lambda x: x[1], reverse=True)[:amount]
+
+    # Return the MAC addresses of the top 3 clients
+    return [client[0] for client in top_clients]
 
 
 interrupted = False
@@ -103,12 +135,11 @@ if __name__ == "__main__":
     # Add these lines to prompt for timeout duration
     timeout_duration = int(input("Enter the desired timeout duration for Wi-Fi scan (in seconds, default is 30): ") or 30)
 
-
-    print(f"Monitor mode enabled on {mon_iface}. Starting Wi-Fi scan...")
-
     # Add these lines to start the countdown timer thread
     timeout_thread = threading.Thread(target=countdown_timer, args=(timeout_duration,))
     timeout_thread.start()
+
+    print(f"Monitor mode enabled on {mon_iface}. Starting Wi-Fi scan...")
 
     # Add 'timeout=timeout_duration' parameter to the sniff function and handle KeyboardInterrupt
     try:
@@ -134,15 +165,18 @@ if __name__ == "__main__":
 
     if action == 1:
         # Crack the password now
-        print("CRACKING DA PASSWORD NOW")
         pass
     elif action == 2:
-        # Save network information as a hashcat-friendly text file
-        filename = "wifi_networks.txt"
-        with open(filename, 'w') as f:
+        # Save network information as a hashcat-friendly CSV file
+        filename = "wifi_networks.csv"
+        with open(filename, 'a') as f:
             for bssid in selected_bssids:
-                ssid, channel = networks[bssid]
-                f.write(f"{ssid},{bssid},{channel}\n")
+                ssid, channel, signal_strength = networks[bssid]
+
+                clients = get_top_clients(bssid,3)
+                current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+                f.write(f"{ssid},{bssid},{channel},{','.join(clients)},{current_time}\n")
 
         print(f"Network information saved to {filename}.")
     else:
