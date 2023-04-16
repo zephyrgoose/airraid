@@ -2,14 +2,14 @@ import os
 import sys
 import signal
 import subprocess
+import time
+import threading
 from scapy.all import *
 from collections import defaultdict
 
 def signal_handler(signal, frame):
-    print("Disabling monitor mode...")
-    os.system(f"sudo airmon-ng stop {mon_iface}")
-    print("Scan complete.")
-    sys.exit(0)
+    global interrupted
+    interrupted = True
 
 def process_packet(packet):
     if packet.haslayer(Dot11Beacon):
@@ -43,6 +43,17 @@ def choose_action(selected_bssids):
     action = int(input("Choose an action (enter the number): "))
     return action
 
+def countdown_timer(timeout):
+    global interrupted
+    for remaining in range(timeout, 0, -1):
+        if interrupted:
+            break
+        sys.stdout.write(f"\rTime remaining: {remaining:2d} seconds")
+        sys.stdout.flush()
+        time.sleep(1)
+
+
+interrupted = False
 if __name__ == "__main__":
     networks = {}
     signal.signal(signal.SIGINT, signal_handler)
@@ -85,20 +96,45 @@ if __name__ == "__main__":
                 mon_iface = iface
         else:
             mon_iface = iface
-
     if not mon_iface:
         print("Monitor mode is not enabled on any interface. Exiting.")
         sys.exit(1)
 
+    # Add these lines to prompt for timeout duration
+    timeout_duration = int(input("Enter the desired timeout duration for Wi-Fi scan (in seconds, default is 30): ") or 30)
+
 
     print(f"Monitor mode enabled on {mon_iface}. Starting Wi-Fi scan...")
-    sniff(iface=mon_iface, prn=process_packet)
 
+    # Add these lines to start the countdown timer thread
+    timeout_thread = threading.Thread(target=countdown_timer, args=(timeout_duration,))
+    timeout_thread.start()
+
+    # Add 'timeout=timeout_duration' parameter to the sniff function and handle KeyboardInterrupt
+    try:
+        start_time = time.time()
+        while time.time() - start_time < timeout_duration:
+            try:
+                sniff(iface=mon_iface, prn=process_packet, timeout=1)
+                remaining_time = timeout_duration - (time.time() - start_time)
+                sys.stdout.write(f"\rTime remaining: {int(remaining_time)} seconds")
+                sys.stdout.flush()
+            except KeyboardInterrupt:
+                interrupted = True
+                break
+        sys.stdout.write("\r")
+        sys.stdout.flush()
+    except KeyboardInterrupt:
+        interrupted = True
+
+
+    # Present available networks and choose action
     selected_bssids = select_networks()
     action = choose_action(selected_bssids)
 
     if action == 1:
         # Crack the password now
+        print("CRACKING DA PASSWORD NOW")
         pass
     elif action == 2:
         # Save network information as a hashcat-friendly text file
