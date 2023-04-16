@@ -15,7 +15,7 @@ def process_packet(packet):
     if packet.haslayer(Dot11Beacon):
         bssid = packet[Dot11].addr2
         ssid = packet[Dot11Elt].info.decode()
-        channel = int(ord(packet[Dot11Elt:3].info))
+        channel = int(packet[Dot11Elt:3].info[0])
 
         if bssid not in networks:
             networks[bssid] = (ssid, channel)
