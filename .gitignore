@@ -4,5 +4,6 @@ __pycache__/
 *.pyo
 *.pyd
 *.log
+wireless_bulk.json
 wifi_networks.csv
 .wifi_networks.csv.kate-swp
