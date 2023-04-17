@@ -1,9 +1,12 @@
+#!/usr/bin/python3
+#monitor_mode.py
+
 import os
 import subprocess
 
 def enable_monitor_mode(iface):
-    print("Enabling monitor mode...")
-    os.system(f"sudo airmon-ng start {iface}")
+    print("Attempting to enable monitor mode...")
+    os.system(f"sudo airmon-ng start {iface} > /dev/null")
     mon_iface = os.popen("iwconfig 2>/dev/null | grep '^[a-zA-Z]' | grep 'Mode:Monitor' | awk '{print $1}'").read().strip()
 
     if not mon_iface:
@@ -22,7 +25,7 @@ def enable_monitor_mode(iface):
                 mon_iface = iface
         else:
             mon_iface = iface
-
+        print("Device in monitor mode.")
     if not mon_iface:
         print("Monitor mode is not enabled on any interface.")
         return None
@@ -31,5 +34,5 @@ def enable_monitor_mode(iface):
 
 def disable_monitor_mode(mon_iface):
     print("Disabling monitor mode...")
-    os.system(f"sudo airmon-ng stop {mon_iface}")
+    os.system(f"sudo airmon-ng stop {mon_iface} > /dev/null")
     print("Monitor mode disabled.")
