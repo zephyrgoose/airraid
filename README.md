@@ -8,4 +8,18 @@ Currently, it just collates network and client information in a big json file ca
 Run bulk_accumulator.py with python using sudo
 
 Tested and created with python 3.10.10.
-You may have to figure out the python packages yourself, shouldn't be too hard. When I make a dependency list, I'll replace this with that list.
+
+Required Linux packages [version tested on]:
+- aircrack-ng [1.7]
+- iwconfig [WT-30]
+- net-tools [2.10]
+- hashcat [6.2.6]
+
+Required python packages (currently all built-in):
+- tempfile
+- signal
+- time
+- csv
+- os
+- glob
+- subprocess
