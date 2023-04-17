@@ -6,7 +6,7 @@ import glob
 import signal
 from monitor_mode import enable_monitor_mode, disable_monitor_mode
 from interface_manager import get_wireless_interfaces, select_wireless_interface
-from bulk_accumulator_functions import get_capture_duration, capture_wireless_networks, parse_airodump_csv, handle_interrupt_signal
+from bulk_accumulator_functions import get_capture_duration, capture_wireless_networks, parse_airodump_csv, handle_interrupt_signal, get_metrics, print_metrics
 
 mon_iface = None
 def main():
@@ -28,7 +28,8 @@ def main():
                     json.dump(networks, json_file, indent=4, sort_keys=True)
 
             disable_monitor_mode(mon_iface)
-
+            metrics = get_metrics(networks)
+            print_metrics(metrics, networks)
 
 
 if __name__ == "__main__":
