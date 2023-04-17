@@ -1,14 +1,14 @@
-import os
-import json
-import time
-import subprocess
+#!/usr/bin/python3
+#bulk_accumulator_functions.py
+
 import tempfile
-import glob
 import signal
+import time
 import csv
-from datetime import datetime
-from monitor_mode import enable_monitor_mode, disable_monitor_mode
-from interface_manager import get_wireless_interfaces, select_wireless_interface
+import os
+import glob
+import subprocess
+
 
 def handle_interrupt_signal(signal_number, frame):
     print("\nReceived interrupt signal. Exiting...")
@@ -16,16 +16,27 @@ def handle_interrupt_signal(signal_number, frame):
         disable_monitor_mode(mon_iface)
     exit(0)
 
-import subprocess
-import tempfile
+def get_capture_duration():
+    default_duration = 15
+    duration = input(f"Please enter capture duration in seconds (default is {default_duration} seconds): ")
+    if duration == "":
+        print(f"Capture duration is {default_duration} seconds.")
+        return default_duration
+    else:
+        duration = int(duration)
+        print(f"Capture duration is {duration} seconds.")
+        return duration
 
-def capture_wireless_networks(mon_iface, capture_duration=15):
+def capture_wireless_networks(mon_iface, capture_duration):
     with tempfile.NamedTemporaryFile(delete=False) as temp_file:
         output_file = temp_file.name
-        cmd = f"timeout {capture_duration} airodump-ng -w {output_file} --output-format csv {mon_iface}"
+        cmd = f"airodump-ng -w {output_file} --output-format csv -a {mon_iface} --berlin 20"
 
         try:
-            subprocess.run(cmd, shell=True, check=True)
+            process = subprocess.Popen(cmd, shell=True, preexec_fn=os.setsid)
+            time.sleep(capture_duration)
+            os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+            process.wait()
         except subprocess.CalledProcessError as e:
             print(f"Error during airodump-ng execution: {e}")
             return None
@@ -37,8 +48,7 @@ def capture_wireless_networks(mon_iface, capture_duration=15):
         else:
             print("Error: Could not find the generated CSV file.")
             return None
-
-
+		
 def save_networks_csv(networks, filename="networks.csv"):
     with open(filename, "w", newline="") as csvfile:
         fieldnames = networks[0].keys()
@@ -47,6 +57,7 @@ def save_networks_csv(networks, filename="networks.csv"):
         for row in networks:
             writer.writerow(row)
 
+
 def save_clients_csv(clients, filename="clients.csv"):
     with open(filename, "w", newline="") as csvfile:
         fieldnames = clients[0].keys()
@@ -54,6 +65,7 @@ def save_clients_csv(clients, filename="clients.csv"):
         writer.writeheader()
         for row in clients:
             writer.writerow(row)
+
 
 def parse_airodump_csv(filename):
     networks = []
@@ -68,33 +80,16 @@ def parse_airodump_csv(filename):
             client_csv = csv.DictReader(sections[1].strip().split("\n"))
 
             for row in network_csv:
+                # Remove leading spaces from keys
+                row = {k.strip(): v for k, v in row.items()}
+                # Remove LAN IP and Key fields
+                row.pop("LAN IP", None)
+                row.pop("Key", None)
                 networks.append(row)
+
             for row in client_csv:
+                # Remove leading spaces from keys
+                row = {k.strip(): v for k, v in row.items()}
                 clients.append(row)
 
-    return networks, clients
-
-mon_iface = None
-def main():
-    global mon_iface
-    interfaces = get_wireless_interfaces()
-    iface = select_wireless_interface(interfaces)
-
-    if iface is not None:
-        mon_iface = enable_monitor_mode(iface)
-
-        if mon_iface is not None:
-            airodump_output_file = capture_wireless_networks(mon_iface)
-            if airodump_output_file is not None:
-                networks = parse_airodump_csv(airodump_output_file)
-
-                # Save the networks and client information in a JSON file
-                with open("wireless_networks.json", "w") as json_file:
-                    json.dump(networks, json_file, indent=4, sort_keys=True)
-
-            disable_monitor_mode(mon_iface)
-
-
-if __name__ == "__main__":
-    signal.signal(signal.SIGINT, handle_interrupt_signal)
-    main()
+    return {"networks": networks, "clients": clients}
