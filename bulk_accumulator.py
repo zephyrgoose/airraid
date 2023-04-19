@@ -1,39 +1,47 @@
-#!/usr/bin/python3
-# bulk_accumulator.py
-
 import json
-import signal
 from monitor_mode import enable_monitor_mode, disable_monitor_mode
 from interface_manager import get_wireless_interfaces, select_wireless_interface
-from bulk_accumulator_functions import get_capture_duration, capture_wireless_networks, parse_airodump_csv, handle_interrupt_signal, get_metrics, print_metrics
+from bulk_accumulator_functions import get_capture_duration, capture_wireless_networks, parse_airodump_csv, get_metrics, print_metrics
 
-mon_iface = None
-
-
-def main():
-
-    global mon_iface
+def run_bulk_accumulator():
     interfaces = get_wireless_interfaces()
-    iface = select_wireless_interface(interfaces)
+    interface_name = select_wireless_interface(interfaces)
 
-    if iface is not None:
-        mon_iface = enable_monitor_mode(iface)
+    if interface_name is None:
+        print("Error: No wireless interface selected")
+        return
 
-        if mon_iface is not None:
-            capture_duration = get_capture_duration()
-            airodump_output_file = capture_wireless_networks(mon_iface, capture_duration)
-            if airodump_output_file is not None:
-                networks = parse_airodump_csv(airodump_output_file)
+    capture_duration = get_capture_duration()
+    output_file = "wireless_bulk.json"
 
-                # Save the networks and client information in a JSON file
-                with open("wireless_bulk.json", "w") as json_file:
-                    json.dump(networks, json_file, indent=4, sort_keys=True)
+    # Enable monitor mode on the wireless interface
+    mon_iface = enable_monitor_mode(interface_name)
 
-            disable_monitor_mode(mon_iface)
-            metrics = get_metrics(networks)
-            print_metrics(metrics, networks)
+    if mon_iface is None:
+        print("Error: Failed to enable monitor mode on interface " + interface_name)
+        return
 
+    # Capture wireless networks for the specified duration
+    airodump_output_file = capture_wireless_networks(mon_iface, capture_duration)
 
-if __name__ == "__main__":
-    signal.signal(signal.SIGINT, handle_interrupt_signal)
-    main()
+    if airodump_output_file is None:
+        print("Error: Failed to capture wireless networks")
+        disable_monitor_mode(mon_iface)
+        return
+
+    # Parse the captured data into a list of network objects
+    networks = parse_airodump_csv(airodump_output_file)
+
+    # Save the networks and client information in a JSON file
+    with open(output_file, "w") as json_file:
+        json.dump(networks, json_file, indent=4, sort_keys=True)
+
+    # Disable monitor mode on the wireless interface
+    disable_monitor_mode(mon_iface)
+
+    # Calculate and print metrics for the captured data
+    metrics = get_metrics(networks)
+    print_metrics(metrics, networks)
+
+    # Return the networks and metrics for further processing
+    return networks, metrics
