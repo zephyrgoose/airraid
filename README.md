@@ -10,10 +10,12 @@ Run bulk_accumulator.py with python using sudo
 Tested and created with python 3.10.10.
 
 Required Linux packages [version tested on]:
-- aircrack-ng [1.7]
-- iwconfig [WT-30]
-- net-tools [2.10]
-- hashcat [6.2.6]
+- pyrcrack	[1.2.6]
+- asyncio	[3.4.3]
+- aircrack-ng	[1.7]	(built-in)
+- iwconfig	[WT-30]	(built-in)
+- net-tools	[2.10]	(built-in)
+- hashcat	[6.2.6]	(built-in)
 
 Required python packages (currently all built-in):
 - tempfile

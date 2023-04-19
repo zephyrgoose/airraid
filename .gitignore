@@ -8,3 +8,4 @@ wireless_bulk.json
 wifi_networks.csv
 .wifi_networks.csv.kate-swp
 .wireless_bulk.json.kate-swp
+captured_hashes/*
