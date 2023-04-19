@@ -1,13 +1,14 @@
 #!/usr/bin/python3
-#interface_manager.py
+# interface_manager.py
 
 import os
-import subprocess
+
 
 def get_wireless_interfaces():
     iwconfig_output = os.popen("iwconfig 2>/dev/null | grep '^[a-zA-Z]' | grep -v 'no wireless extensions' | awk '{print $1}'").read()
     interfaces = iwconfig_output.split("\n")[:-1]
     return interfaces
+
 
 def select_wireless_interface(interfaces):
     if not interfaces:

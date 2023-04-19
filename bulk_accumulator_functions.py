@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-#bulk_accumulator_functions.py
+# bulk_accumulator_functions.py
 
 import tempfile
 import signal
@@ -16,6 +16,7 @@ def handle_interrupt_signal(signal_number, frame):
         disable_monitor_mode(mon_iface)
     exit(0)
 
+
 def get_capture_duration():
     default_duration = 15
     duration = input(f"Please enter capture duration in seconds (default is {default_duration} seconds): ")
@@ -26,6 +27,7 @@ def get_capture_duration():
         duration = int(duration)
         print(f"Capture duration is {duration} seconds.")
         return duration
+
 
 def capture_wireless_networks(mon_iface, capture_duration):
     with tempfile.NamedTemporaryFile(delete=False) as temp_file:
@@ -48,7 +50,8 @@ def capture_wireless_networks(mon_iface, capture_duration):
         else:
             print("Error: Could not find the generated CSV file.")
             return None
-		
+
+
 def save_networks_csv(networks, filename="networks.csv"):
     with open(filename, "w", newline="") as csvfile:
         fieldnames = networks[0].keys()
@@ -94,14 +97,18 @@ def parse_airodump_csv(filename):
 
     return {"networks": networks, "clients": clients}
 
+
 def chance_of_cracking_10_minutes(network):
     return 0.1  # Replace with actual calculation
+
 
 def chance_of_cracking_10_hours(network):
     return 0.5  # Replace with actual calculation
 
+
 def chance_of_cracking_10_days(network):
     return 0.9  # Replace with actual calculation
+
 
 def print_metrics(metrics, networks_data):
     print(f"Number of networks: {metrics['Number of networks']}")

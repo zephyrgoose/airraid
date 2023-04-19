@@ -1,8 +1,21 @@
 #!/usr/bin/python3
-#monitor_mode.py
+# monitor_mode.py
 
 import os
 import subprocess
+
+
+def disable_power_management(iface):
+    print("Disabling power management...")
+    os.system(f"sudo iw dev {iface} set power_save off")
+    print("Power management disabled.")
+
+
+def enable_power_management(iface):
+    print("Enabling power management...")
+    os.system(f"sudo iw dev {iface} set power_save on")
+    print("Power management enabled.")
+
 
 def enable_monitor_mode(iface):
     print("Attempting to enable monitor mode...")
@@ -20,6 +33,7 @@ def enable_monitor_mode(iface):
             iwconfig_output = subprocess.check_output(["iwconfig", iface])
             if b"Mode:Monitor" not in iwconfig_output:
                 print("Failed to enable monitor mode.")
+                enable_power_management(iface)
                 return None
             else:
                 mon_iface = iface
@@ -28,11 +42,15 @@ def enable_monitor_mode(iface):
         print("Device in monitor mode.")
     if not mon_iface:
         print("Monitor mode is not enabled on any interface.")
+        enable_power_management(iface)
         return None
 
+    disable_power_management(mon_iface)
     return mon_iface
+
 
 def disable_monitor_mode(mon_iface):
     print("Disabling monitor mode...")
     os.system(f"sudo airmon-ng stop {mon_iface} > /dev/null")
     print("Monitor mode disabled.")
+    enable_power_management(mon_iface)

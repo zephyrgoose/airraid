@@ -1,15 +1,17 @@
 #!/usr/bin/python3
-#bulk_accumulator.py
+# bulk_accumulator.py
 
 import json
-import glob
 import signal
 from monitor_mode import enable_monitor_mode, disable_monitor_mode
 from interface_manager import get_wireless_interfaces, select_wireless_interface
 from bulk_accumulator_functions import get_capture_duration, capture_wireless_networks, parse_airodump_csv, handle_interrupt_signal, get_metrics, print_metrics
 
 mon_iface = None
+
+
 def main():
+
     global mon_iface
     interfaces = get_wireless_interfaces()
     iface = select_wireless_interface(interfaces)
