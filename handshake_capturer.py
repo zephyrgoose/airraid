@@ -4,6 +4,7 @@
 import os
 import subprocess
 import time
+import shutil
 
 def capture_handshake(interface_name, station_mac, station_essid, station_channel, timeout):
     output_prefix = "network-traffic"
@@ -15,37 +16,31 @@ def capture_handshake(interface_name, station_mac, station_essid, station_channe
     ])
 
     try:
-        while True:
-            elapsed_time = time.time() - start_time
-            if elapsed_time > timeout:
-                print("Timeout reached.")
-                break
-
-            # Check for the existence of a 4-way handshake
-            hcxpcapngtool_process = subprocess.run(
-                ["hcxpcapngtool", "-o", "hash", f"{output_prefix}-01.cap"],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-            )
-
+        while time.time() - start_time < timeout:
+            time.sleep(1)
+            subprocess.run(["sudo", "hcxpcapngtool", "-o", "hash", f"{output_prefix}-01.cap"], stdout=subprocess.DEVNULL)
             if os.path.exists("hash"):
-                print("Handshake captured.")
+                airodump_process.terminate()
                 break
-
-            # Wait for a short period before checking again
-            time.sleep(2)
     except KeyboardInterrupt:
-        print("\nInterrupted by user (Ctrl+C). Shutting down gracefully.")
-    finally:
         airodump_process.terminate()
+    finally:
         airodump_process.wait()
 
-        # Clean up the files
-        cap_file = f"{output_prefix}-01.cap"
+        # Change permissions of the created files
+        if os.path.exists(f"{output_prefix}-01.cap"):
+            subprocess.run(["sudo", "chmod", "777", f"{output_prefix}-01.cap"])
+            os.remove(f"{output_prefix}-01.cap")
+
         if os.path.exists("hash"):
-            os.makedirs("captured_hashes", exist_ok=True)
-            os.rename("hash", f"captured_hashes/{station_essid}-captured-hash")
-        if os.path.exists(cap_file):
-            os.remove(cap_file)
+            subprocess.run(["sudo", "chmod", "777", "hash"])
+            new_hash_name = f"{station_essid}-captured-hash"
+            if not os.path.exists("captured_hashes"):
+                os.mkdir("captured_hashes")
+            shutil.move("hash", os.path.join("captured_hashes", new_hash_name))
+            subprocess.run(["chmod", "777", os.path.join("captured_hashes", new_hash_name)])
+
+
 
 
 
