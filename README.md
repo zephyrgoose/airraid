@@ -5,7 +5,7 @@ Airraid glues together aircrack-ng, hashcat, and some forethought. Airraid is au
 
 Currently, it just collates network and client information in a big json file called wireless_bulk.json.
 
-Run bulk_accumulator.py with python using sudo
+Run airraid.py with python using sudo
 
 Tested and created with python 3.10.10.
 
