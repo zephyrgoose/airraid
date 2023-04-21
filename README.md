@@ -3,6 +3,7 @@ This is a BIG work-in-progress
 
 Airraid glues together aircrack-ng, hashcat, and some forethought. Airraid is autonomous, and uses OSINT to try to accelerate the password cracking phase. You can also collect hashes to try in hashcat later.
 
+
 Since this is a WIP, there are several seperate scripts mean to be ran by the end-user:
 - airraid.py
 - bulk_discriminator.py
@@ -17,8 +18,8 @@ bulk_discriminator.py performs analysis on wireless_bulk.json, and is meant to b
 handshake_capturer.py takes various network and client details as inputs, and listens for 4-way handshakes. If it detects one it automatically saves the handshake to captured_handshakes/, deleteds the temporary files used, and exits gracefully.
 
 
-Tested and created with python 3.10.10.
 
+Tested and created with python 3.10.10.
 Required Linux packages [version tested on]:
 - pyrcrack	[1.2.6]
 - asyncio	[3.4.3]
