@@ -35,10 +35,10 @@ def capture_handshake(interface_name, station_mac, station_essid, station_channe
         if os.path.exists("hash"):
             subprocess.run(["sudo", "chmod", "777", "hash"])
             new_hash_name = f"{station_essid}-captured-hash"
-            if not os.path.exists("captured_hashes"):
-                os.mkdir("captured_hashes")
-            shutil.move("hash", os.path.join("captured_hashes", new_hash_name))
-            subprocess.run(["chmod", "777", os.path.join("captured_hashes", new_hash_name)])
+            if not os.path.exists("captured_handshakes"):
+                os.mkdir("captured_handshakes")
+            shutil.move("hash", os.path.join("captured_handshakes", new_hash_name))
+            subprocess.run(["chmod", "777", os.path.join("captured_handshakes", new_hash_name)])
 
 
 
