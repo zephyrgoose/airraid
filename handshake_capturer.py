@@ -45,8 +45,8 @@ def capture_handshake(interface_name, station_mac, station_essid, station_channe
 
 
 interface_name = "wlp0s20f0u4"  # Monitor mode interface name
-station_mac = "72:CD:D6:A1:EB:A6"  # Station MAC address
-station_channel = 3  # Station channel
-timeout = 6000  # Timeout in seconds
+station_mac = "98:48:27:4B:4B:4E"  # Station MAC address
+station_channel = 1  # Station channel
+timeout = 600  # Timeout in seconds
 
 capture_handshake(interface_name, station_mac, "test-essid", station_channel, timeout)
