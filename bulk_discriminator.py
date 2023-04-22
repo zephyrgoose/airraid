@@ -1,55 +1,29 @@
-#!/usr/bin/python3
-# bulk_discriminator.py
-
 import json
-
 
 def process_wireless_data(wireless_data):
     networks = wireless_data["networks"]
     clients = wireless_data["clients"]
-    result = []
+    results = []
 
-    # Create a dictionary to map BSSID to ESSID
-    bssid_to_essid = {network["BSSID"]: network["ESSID"] for network in networks}
+    for network in networks:
+        associated_clients = [client for client in clients if client["BSSID"] == network["BSSID"]]
+        if associated_clients:
+            result = {
+                'ESSID': network['ESSID'],
+                'number_of_clients': len(associated_clients),
+                'station_mac': network['BSSID'],
+                'client_mac_addresses': [client["Station MAC"] for client in associated_clients]
+            }
+            results.append(result)
 
-    # Group clients by their associated Station MAC
-    associated_clients = {}
-    for client in clients:
-        station_mac = client["Station MAC"]
-        if station_mac not in associated_clients:
-            associated_clients[station_mac] = []
-        associated_clients[station_mac].append(client["BSSID"])
-
-    for station_mac, client_macs in associated_clients.items():
-        # Ignore networks without associated clients
-        if station_mac == "(not associated)":
-            continue
-
-        essid = bssid_to_essid.get(station_mac, station_mac)
-
-        network_data = {
-            "ESSID": essid,
-            "number_of_clients": len(client_macs),
-            "station_mac": station_mac,
-            "client_mac_addresses": client_macs
-        }
-
-        result.append(network_data)
-
-    return result
-
+    return results
 
 def main():
-    try:
-        with open("wireless_bulk.json", "r") as f:
-            wireless_bulk_data = json.load(f)
-    except FileNotFoundError:
-        print("Error: 'wireless_bulk.json' not found in the current directory.")
-        exit()
+    with open("wireless_bulk.json", "r") as file:
+        data = json.load(file)
 
-    processed_data = process_wireless_data(wireless_bulk_data)
-    print(processed_data)
-
+    return process_wireless_data(data)
 
 if __name__ == "__main__":
-    main()
+    results = main()
+    print(results)

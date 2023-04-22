@@ -1,3 +1,6 @@
+#!/usr/bin/python3
+# bulk_accumulator.py
+
 import json
 from monitor_mode import enable_monitor_mode, disable_monitor_mode
 from interface_manager import get_wireless_interfaces, select_wireless_interface
