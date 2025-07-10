@@ -24,8 +24,3 @@ def deauth(station_mac, client_mac, interface):
         disable_monitor_mode(monitor_interface)
 
 
-station_mac = "98:48:27:4B:4B:4E"
-client_mac = "28:6C:07:AB:8C:53"
-interface = "wlp0s20f0u4"
-
-deauth(station_mac, client_mac, interface)

@@ -98,16 +98,40 @@ def parse_airodump_csv(filename):
     return {"networks": networks, "clients": clients}
 
 
+SPEED = 100000  # Hashes per second assumption for WPA cracking
+
+OUI_PATTERNS = {
+    "98:48:27": "digits8",  # example vendor using 8 digit numeric keys
+    "00:11:22": "digits10",  # example vendor using 10 digit numeric keys
+}
+
+
+def _keyspace_for_network(network):
+    prefix = network.get("BSSID", "")[:8].upper()
+    pattern = OUI_PATTERNS.get(prefix)
+    if pattern == "digits8":
+        return 10 ** 8
+    if pattern == "digits10":
+        return 10 ** 10
+    return None
+
+
+def _prob_for_period(keyspace, seconds):
+    if keyspace is None:
+        return 0.0
+    return min(1.0, (SPEED * seconds) / keyspace)
+
+
 def chance_of_cracking_10_minutes(network):
-    return 0.1  # Replace with actual calculation
+    return _prob_for_period(_keyspace_for_network(network), 600)
 
 
 def chance_of_cracking_10_hours(network):
-    return 0.5  # Replace with actual calculation
+    return _prob_for_period(_keyspace_for_network(network), 36000)
 
 
 def chance_of_cracking_10_days(network):
-    return 0.9  # Replace with actual calculation
+    return _prob_for_period(_keyspace_for_network(network), 864000)
 
 
 def print_metrics(metrics, networks_data):
